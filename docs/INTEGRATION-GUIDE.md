@@ -51,7 +51,6 @@ Microsoft Foundry expects an OpenAI-compatible API with specific endpoints. We'l
 
 ### Step 1.1: Create the API
 
-> **IMPORTANT:** `--subscription-key-header-name "api-key"` is REQUIRED for Foundry compatibility!
 
 ```powershell
 az apim api create `
@@ -82,7 +81,6 @@ az apim api create `
 
 ### Step 1.2: Create Required Operations
 
-Foundry requires **3 specific operations** to work with an `ApiManagement` connection:
 
 #### Operation 1: ListDeployments
 
