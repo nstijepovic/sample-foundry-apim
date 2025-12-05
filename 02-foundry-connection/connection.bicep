@@ -4,6 +4,12 @@
   Creates a connection from Azure AI Foundry to an external LLM
   provider through Azure API Management.
   
+  MODEL DISCOVERY:
+  - Dynamic (default): Leave staticModels empty. Foundry will call the
+    ListDeployments endpoint on APIM to discover available models.
+  - Static: Provide a list of models in staticModels. Foundry will use
+    this list directly without calling ListDeployments.
+  
   Usage:
     az deployment group create \
       --resource-group <RESOURCE_GROUP> \
@@ -37,7 +43,7 @@ param deploymentInPath string = 'true'
 @description('API version for inference calls')
 param inferenceAPIVersion string = '2024-10-21'
 
-@description('Static list of models (optional - leave empty to use ListDeployments)')
+@description('Static list of models. Leave empty for dynamic discovery (Foundry calls ListDeployments). Provide models to skip the API call.')
 param staticModels array = []
 
 // =============================================================================

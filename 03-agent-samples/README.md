@@ -1,21 +1,33 @@
 # Agent Samples
 
-Sample Python scripts for using Azure AI Foundry with your APIM connection.
+Sample Python scripts for using Azure AI Foundry Agents with APIM-proxied LLM endpoints.
+
+## Prerequisites
+
+- Python 3.12+
+- [uv](https://docs.astral.sh/uv/) package manager
+- Azure CLI logged in (`az login`)
 
 ## Setup
 
 1. Install dependencies:
 
 ```bash
-pip install -r requirements.txt
+uv sync
 ```
 
-2. Set environment variables (or update the scripts):
+2. Copy `.env.example` to `.env` and update values:
 
 ```bash
-export AZURE_AI_PROJECT_ENDPOINT="https://<account>.services.ai.azure.com/api/projects/<project>"
-export AZURE_AI_CONNECTION_NAME="compass-connection"
-export AZURE_AI_MODEL_NAME="gpt-5"
+cp .env.example .env
+```
+
+3. Set your environment variables in `.env`:
+
+```env
+AZURE_AI_PROJECT_ENDPOINT=https://<account>.services.ai.azure.com/api/projects/<project>
+AZURE_AI_CONNECTION_NAME=compass-connection
+AZURE_AI_MODEL_NAME=gpt-5
 ```
 
 ## Scripts
@@ -31,19 +43,19 @@ export AZURE_AI_MODEL_NAME="gpt-5"
 ### Test Connection
 
 ```bash
-python test_connection.py
+uv run test_connection.py
 ```
 
 ### Create Agent
 
 ```bash
-python create_agent.py
+uv run create_agent.py
 ```
 
 ### Interactive Chat
 
 ```bash
-python chat_with_agent.py
+uv run chat_with_agent.py
 ```
 
 ## Model Reference

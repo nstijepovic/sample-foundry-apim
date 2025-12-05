@@ -6,7 +6,7 @@ Creates an agent in Azure AI Foundry using the APIM connection.
 
 import os
 from dotenv import load_dotenv
-from azure.identity import DefaultAzureCredential, InteractiveBrowserCredential
+from azure.identity import DefaultAzureCredential
 from azure.ai.projects import AIProjectClient
 from azure.ai.projects.models import PromptAgentDefinition
 
@@ -19,20 +19,12 @@ PROJECT_ENDPOINT = os.environ.get(
 )
 CONNECTION_NAME = os.environ.get("AZURE_AI_CONNECTION_NAME", "compass-connection")
 MODEL_NAME = os.environ.get("AZURE_AI_MODEL_NAME", "gpt-5")
-TENANT_ID = os.environ.get("AZURE_TENANT_ID", None)
 
 # Agent configuration
 AGENT_NAME = "my-compass-agent"
 AGENT_INSTRUCTIONS = """You are a helpful assistant powered by an external LLM through Azure API Management.
 
 Be concise and helpful in your responses."""
-
-
-def get_credential():
-    """Get Azure credential."""
-    if TENANT_ID:
-        return InteractiveBrowserCredential(tenant_id=TENANT_ID)
-    return DefaultAzureCredential()
 
 
 def main():
@@ -44,8 +36,8 @@ def main():
     print(f"Agent: {AGENT_NAME}")
     print()
 
-    # Connect to Foundry
-    credential = get_credential()
+    # Connect to Foundry using DefaultAzureCredential (uses az login session)
+    credential = DefaultAzureCredential()
     client = AIProjectClient(endpoint=PROJECT_ENDPOINT, credential=credential)
 
     # Create agent

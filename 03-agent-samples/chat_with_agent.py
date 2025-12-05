@@ -6,7 +6,7 @@ Interactive chat session with an agent in Azure AI Foundry.
 
 import os
 from dotenv import load_dotenv
-from azure.identity import DefaultAzureCredential, InteractiveBrowserCredential
+from azure.identity import DefaultAzureCredential
 from azure.ai.projects import AIProjectClient
 from azure.ai.projects.models import AgentReference
 
@@ -18,14 +18,6 @@ PROJECT_ENDPOINT = os.environ.get(
     "https://<account>.services.ai.azure.com/api/projects/<project>"
 )
 AGENT_NAME = os.environ.get("AZURE_AI_AGENT_NAME", "my-compass-agent")
-TENANT_ID = os.environ.get("AZURE_TENANT_ID", None)
-
-
-def get_credential():
-    """Get Azure credential."""
-    if TENANT_ID:
-        return InteractiveBrowserCredential(tenant_id=TENANT_ID)
-    return DefaultAzureCredential()
 
 
 def main():
@@ -37,8 +29,8 @@ def main():
     print("\nType 'exit' to quit.\n")
     print("-" * 60)
 
-    # Connect to Foundry
-    credential = get_credential()
+    # Connect to Foundry using DefaultAzureCredential (uses az login session)
+    credential = DefaultAzureCredential()
     client = AIProjectClient(endpoint=PROJECT_ENDPOINT, credential=credential)
     openai = client.get_openai_client()
 

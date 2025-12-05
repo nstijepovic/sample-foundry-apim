@@ -25,6 +25,17 @@ az deployment group create `
 | `targetUrl` | APIM endpoint URL | `https://my-apim.azure-api.net/compass` |
 | `apiKey` | APIM subscription key | `abc123...` |
 
+## Model Discovery: Static vs Dynamic
+
+Foundry needs to know what models are available through your APIM connection.
+
+| Approach | `staticModels` param | How it works |
+|----------|---------------------|---------------|
+| **Dynamic** (default) | `[]` (empty) | Foundry calls APIM's `ListDeployments` endpoint to discover models |
+| **Static** | `["gpt-4", "gpt-5"]` | Models are stored in connection metadata, no API call needed |
+
+**Recommendation:** Use dynamic discovery (empty `staticModels`) so your APIM is the single source of truth for available models.
+
 ## Connection Properties
 
 | Property | Value | Description |

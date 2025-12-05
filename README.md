@@ -2,15 +2,31 @@
 
 > Connect Azure AI Foundry to any OpenAI-compatible LLM provider through Azure API Management (APIM).
 
-## Official Documentation
+⚠️ **This is a sample implementation** to demonstrate how to integrate Azure AI Foundry with external LLM providers via APIM. It was created to make the integration work based on the official documentation.
 
-Before starting, review the official Microsoft documentation:
+## Required Reading
+
+Before starting, **read these resources** to understand the approaches and architecture:
 
 | Resource | Description |
 |----------|-------------|
-| [Bring your own AI gateway to Azure AI Agent Service](https://learn.microsoft.com/en-us/azure/ai-foundry/agents/how-to/tools/bring-your-own-ai-gateway) | Official guide for APIM integration with Foundry agents |
-| [APIM and Model Gateway Integration Guide](https://github.com/azure-ai-foundry/foundry-samples/blob/main/infrastructure/infrastructure-setup-bicep/01-connections/apim-and-modelgateway-integration-guide.md) | Sample Bicep templates from Microsoft |
-| [Azure AI Foundry Connections](https://learn.microsoft.com/en-us/azure/ai-foundry/how-to/connections-add) | How to create and manage connections |
+| [🔗 AI Gateway in Azure AI Foundry](https://learn.microsoft.com/en-us/azure/ai-foundry/agents/how-to/ai-gateway?view=foundry) | **Start here** - Official guide explaining AI Gateway options |
+| [🔗 APIM and Model Gateway Integration Guide](https://github.com/azure-ai-foundry/foundry-samples/blob/main/infrastructure/infrastructure-setup-bicep/01-connections/apim-and-modelgateway-integration-guide.md) | Detailed Bicep templates and step-by-step instructions |
+| [Bring your own AI gateway to Azure AI Agent Service](https://learn.microsoft.com/en-us/azure/ai-foundry/agents/how-to/tools/bring-your-own-ai-gateway) | Additional documentation for APIM integration |
+
+## Limitations (Public Preview)
+
+> ⚠️ This feature is in **public preview**.
+
+- **CLI and SDK only** - You can only use this feature using the Azure CLI and SDK
+- **Prompt Agents only** - Supported by Prompt Agents in the Agent SDK
+- **Networking**:
+  - Public networking is supported for APIM or self-hosted gateways
+  - For full network isolation, use Foundry with Standard Secured Agents with virtual network injection
+  - For APIM with full network isolation, deploy Foundry and APIM following [this GitHub template](https://github.com/azure-ai-foundry/foundry-samples/tree/main/infrastructure/infrastructure-setup-bicep)
+  - For self-hosted gateways with full network isolation, ensure endpoints are accessible inside the virtual network injection used by the Agent service
+- **Supported Agent tools**: CodeInterpreter, Functions, File Search, OpenAPI, Foundry IQ, Sharepoint Grounding, Fabric Data Agent, MCP, and Browser Automation
+- **Different from built-in AI Gateway** - This feature is different from the "AI Gateway in Foundry" feature where a new, unique APIM instance is deployed with your Foundry resource. For that feature, see [Enforce token limits with AI Gateway](https://learn.microsoft.com/en-us/azure/ai-foundry/how-to/ai-gateway-overview)
 
 ## Overview
 
@@ -29,6 +45,8 @@ This repository provides templates and scripts to:
 
 ## Quick Start
 
+> 📝 **Note:** The PowerShell script `01-apim-setup/setup-apim.ps1` is a **collection of steps to run**. Due to potential network issues, run each step individually in your terminal rather than executing the full script. Copy and paste each section one at a time.
+
 ### Prerequisites
 
 - Azure subscription with:
@@ -39,9 +57,11 @@ This repository provides templates and scripts to:
 
 ### Step 1: Configure APIM
 
+Review and run the steps in `01-apim-setup/setup-apim.ps1` individually:
+
 ```powershell
 cd 01-apim-setup
-./setup-apim.ps1 -ResourceGroup "my-rg" -ApimName "my-apim" -BackendUrl "https://api.core42.ai/openai"
+# Open setup-apim.ps1 and run each step separately
 ```
 
 ### Step 2: Deploy Foundry Connection
@@ -55,8 +75,9 @@ az deployment group create --resource-group "my-rg" --template-file connection.b
 
 ```powershell
 cd ../03-agent-samples
-pip install -r requirements.txt
-python create_agent.py
+uv sync
+uv run test_connection.py
+uv run create_agent.py
 ```
 
 ## Repository Structure
@@ -77,9 +98,9 @@ azure-ai-foundry-apim-integration/
 │   ├── README.md                      # Connection setup instructions
 │   ├── connection.bicep               # Bicep template
 │   └── parameters.example.json        # Example parameters
-└── 03-agent-samples/
+├── 03-agent-samples/
     ├── README.md                      # Sample usage instructions
-    ├── requirements.txt               # Python dependencies
+    ├── pyproject.toml                 # Python dependencies (uv)
     ├── create_agent.py                # Create an agent
     ├── chat_with_agent.py             # Interactive chat
     └── test_connection.py             # Test the connection

@@ -4,8 +4,8 @@
   Returns model details for a specific deployment.
   Foundry calls this to validate a model exists.
   
-  The policy dynamically extracts the deployment name from the URL path
-  and returns it in the response.
+  NOTE: Using static response instead of C# expression to avoid
+  validation issues with az rest. Update the model name as needed.
 -->
 <policies>
     <inbound>
@@ -15,10 +15,7 @@
             <set-header name="Content-Type" exists-action="override">
                 <value>application/json</value>
             </set-header>
-            <set-body>@{
-                var deploymentName = context.Request.MatchedParameters["deploymentName"];
-                return "{\"name\": \"" + deploymentName + "\", \"properties\": {\"model\": {\"format\": \"OpenAI\", \"name\": \"" + deploymentName + "\", \"version\": \"\"}}}";
-            }</set-body>
+            <set-body>{"name": "gpt-5", "properties": {"model": {"format": "OpenAI", "name": "gpt-5", "version": ""}}}</set-body>
         </return-response>
     </inbound>
     <backend>
