@@ -1,0 +1,30 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "accountName": {
+      "value": "<FOUNDRY_ACCOUNT_NAME>"
+    },
+    "projectName": {
+      "value": "<PROJECT_NAME>"
+    },
+    "connectionName": {
+      "value": "compass-connection"
+    },
+    "targetUrl": {
+      "value": "https://<APIM_NAME>.azure-api.net/compass"
+    },
+    "apiKey": {
+      "value": "<APIM_SUBSCRIPTION_KEY>"
+    },
+    "deploymentInPath": {
+      "value": "true"
+    },
+    "inferenceAPIVersion": {
+      "value": "2024-10-21"
+    },
+    "staticModels": {
+      "value": []
+    }
+  }
+}

@@ -1,0 +1,52 @@
+<!--
+  ListDeployments Policy
+  
+  Returns a static list of available models.
+  Foundry calls this endpoint to discover what models are available.
+  
+  Update the model names in the JSON body to match your external LLM provider.
+-->
+<policies>
+    <inbound>
+        <base />
+        <return-response>
+            <set-status code="200" reason="OK" />
+            <set-header name="Content-Type" exists-action="override">
+                <value>application/json</value>
+            </set-header>
+            <set-body>{
+    "value": [
+        {
+            "name": "gpt-4.1",
+            "properties": {
+                "model": {
+                    "format": "OpenAI",
+                    "name": "gpt-4.1",
+                    "version": ""
+                }
+            }
+        },
+        {
+            "name": "gpt-5",
+            "properties": {
+                "model": {
+                    "format": "OpenAI",
+                    "name": "gpt-5",
+                    "version": ""
+                }
+            }
+        }
+    ]
+}</set-body>
+        </return-response>
+    </inbound>
+    <backend>
+        <base />
+    </backend>
+    <outbound>
+        <base />
+    </outbound>
+    <on-error>
+        <base />
+    </on-error>
+</policies>

@@ -1,0 +1,33 @@
+<!--
+  GetDeployment Policy
+  
+  Returns model details for a specific deployment.
+  Foundry calls this to validate a model exists.
+  
+  The policy dynamically extracts the deployment name from the URL path
+  and returns it in the response.
+-->
+<policies>
+    <inbound>
+        <base />
+        <return-response>
+            <set-status code="200" reason="OK" />
+            <set-header name="Content-Type" exists-action="override">
+                <value>application/json</value>
+            </set-header>
+            <set-body>@{
+                var deploymentName = context.Request.MatchedParameters["deploymentName"];
+                return "{\"name\": \"" + deploymentName + "\", \"properties\": {\"model\": {\"format\": \"OpenAI\", \"name\": \"" + deploymentName + "\", \"version\": \"\"}}}";
+            }</set-body>
+        </return-response>
+    </inbound>
+    <backend>
+        <base />
+    </backend>
+    <outbound>
+        <base />
+    </outbound>
+    <on-error>
+        <base />
+    </on-error>
+</policies>
