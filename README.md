@@ -109,6 +109,3 @@ See [docs/INTEGRATION-GUIDE.md](docs/INTEGRATION-GUIDE.md) for detailed step-by-
 - [Foundry Samples - APIM Integration](https://github.com/azure-ai-foundry/foundry-samples/tree/main/infrastructure/infrastructure-setup-bicep/01-connections)
 - [Azure API Management documentation](https://learn.microsoft.com/en-us/azure/api-management/)
 
-## License
-
-MIT License - See [LICENSE](LICENSE) for details.
