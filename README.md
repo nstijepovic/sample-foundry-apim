@@ -36,13 +36,6 @@ This repository provides templates and scripts to:
 2. **Create a Foundry Connection** that uses the APIM proxy
 3. **Build Agents** in Microsoft Foundry that leverage external LLMs
 
-```
-┌─────────────────────┐     ┌─────────────────────┐     ┌─────────────────────┐
-│  Microsoft Foundry  │────▶│   Azure API         │────▶│   External LLM      │
-│   (Agents, Tools)   │     │   Management        │     │   Provider          │
-└─────────────────────┘     └─────────────────────┘     └─────────────────────┘
-```
-
 ## Quick Start
 
 > 📝 **Note:** The PowerShell script `01-apim-setup/setup-apim.ps1` is a **collection of steps to run**. Due to potential network issues, run each step individually in your terminal rather than executing the full script. Copy and paste each section one at a time.

@@ -30,32 +30,7 @@ Before proceeding, review these official resources:
 
 ## Architecture Overview
 
-```
-┌─────────────────────┐     ┌─────────────────────┐     ┌─────────────────────┐
-│                     │     │                     │     │                     │
-│  Microsoft Foundry  │────▶│   Azure API         │────▶│   External LLM      │
-│                     │     │   Management        │     │   Provider          │
-│   • Agents          │     │                     │     │                     │
-│   • Workflows       │     │   • Authentication  │     │   • Core42 Compass  │
-│   • Tools           │     │   • Rate Limiting   │     │   • OpenAI          │
-│   • Evaluations     │     │   • Logging         │     │   • Anthropic       │
-│                     │     │   • Transformations │     │   • Any OpenAI-     │
-│                     │     │                     │     │     compatible API  │
-└─────────────────────┘     └─────────────────────┘     └─────────────────────┘
-        │                           │                           │
-        │   APIM Subscription Key   │   External LLM API Key    │
-        │◀──────────────────────────│◀──────────────────────────│
-        │   (stored in Foundry)     │   (stored in APIM policy) │
-```
-
-### Why This Pattern?
-
-| Benefit | Description |
-|---------|-------------|
-| **Use Any LLM** | Connect Foundry to any OpenAI-compatible API |
-| **Secure Keys** | External LLM keys stay in APIM, not exposed to users |
-| **Centralized Control** | Rate limiting, logging, and policies in one place |
-| **Full Foundry Features** | Use agents, tools, workflows, evaluations with external LLMs |
+Microsoft Foundry connects to your APIM, which proxies requests to the external LLM provider. The APIM subscription key is stored in Foundry, while the external LLM API key is stored securely in APIM policies.
 
 ---
 
@@ -93,7 +68,8 @@ az apim api create `
   --path compass `
   --service-url "https://api.core42.ai/openai" `
   --protocols https `
-  --subscription-required true
+  --subscription-required true `
+  --subscription-key-header-name "api-key"
 ```
 
 **Parameters:**
@@ -103,7 +79,8 @@ az apim api create `
 | `--api-id` | `compass-api` | Unique identifier for the API |
 | `--path` | `compass` | URL path prefix (e.g., `/compass`) |
 | `--service-url` | `https://api.core42.ai/openai` | Backend LLM endpoint |
-| `--subscription-required` | `true` | Require APIM subscription key |
+| `--subscription-required` | `true` | Require API key for access |
+| `--subscription-key-header-name` | `api-key` | **Required for Foundry** - use `api-key` header instead of default |
 
 ---
 
