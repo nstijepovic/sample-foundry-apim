@@ -1,8 +1,8 @@
-# Azure AI Foundry + APIM Integration
+# Microsoft Foundry + APIM Integration
 
-> Connect Azure AI Foundry to any OpenAI-compatible LLM provider through Azure API Management (APIM).
+> Connect Microsoft Foundry to any OpenAI-compatible LLM provider through Azure API Management (APIM).
 
-⚠️ **This is a sample implementation** to demonstrate how to integrate Azure AI Foundry with external LLM providers via APIM. It was created to make the integration work based on the official documentation.
+⚠️ **This is a sample implementation** to demonstrate how to integrate Microsoft Foundry with external LLM providers via APIM. It was created to make the integration work based on the official documentation.
 
 ## Required Reading
 
@@ -10,7 +10,7 @@ Before starting, **read these resources** to understand the approaches and archi
 
 | Resource | Description |
 |----------|-------------|
-| [🔗 AI Gateway in Azure AI Foundry](https://learn.microsoft.com/en-us/azure/ai-foundry/agents/how-to/ai-gateway?view=foundry) | **Start here** - Official guide explaining AI Gateway options |
+| [🔗 AI Gateway in Microsoft Foundry](https://learn.microsoft.com/en-us/azure/ai-foundry/agents/how-to/ai-gateway?view=foundry) | **Start here** - Official guide explaining AI Gateway options |
 | [🔗 APIM and Model Gateway Integration Guide](https://github.com/azure-ai-foundry/foundry-samples/blob/main/infrastructure/infrastructure-setup-bicep/01-connections/apim-and-modelgateway-integration-guide.md) | Detailed Bicep templates and step-by-step instructions |
 | [Bring your own AI gateway to Azure AI Agent Service](https://learn.microsoft.com/en-us/azure/ai-foundry/agents/how-to/tools/bring-your-own-ai-gateway) | Additional documentation for APIM integration |
 
@@ -34,11 +34,11 @@ This repository provides templates and scripts to:
 
 1. **Configure APIM** as a proxy to external LLM providers (e.g., Core42 Compass, OpenAI, Anthropic)
 2. **Create a Foundry Connection** that uses the APIM proxy
-3. **Build Agents** in Azure AI Foundry that leverage external LLMs
+3. **Build Agents** in Microsoft Foundry that leverage external LLMs
 
 ```
 ┌─────────────────────┐     ┌─────────────────────┐     ┌─────────────────────┐
-│   Azure AI Foundry  │────▶│   Azure API         │────▶│   External LLM      │
+│  Microsoft Foundry  │────▶│   Azure API         │────▶│   External LLM      │
 │   (Agents, Tools)   │     │   Management        │     │   Provider          │
 └─────────────────────┘     └─────────────────────┘     └─────────────────────┘
 ```
@@ -51,7 +51,7 @@ This repository provides templates and scripts to:
 
 - Azure subscription with:
   - Azure API Management instance
-  - Azure AI Foundry account and project
+  - Microsoft Foundry account and project
 - External LLM API key (e.g., Core42 Compass)
 - Azure CLI installed
 

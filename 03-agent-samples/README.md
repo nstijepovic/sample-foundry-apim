@@ -1,6 +1,6 @@
 # Agent Samples
 
-Sample Python scripts for using Azure AI Foundry Agents with APIM-proxied LLM endpoints.
+Sample Python scripts for using Microsoft Foundry Agents with APIM-proxied LLM endpoints.
 
 ## Prerequisites
 

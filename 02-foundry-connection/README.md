@@ -1,6 +1,6 @@
 # Foundry Connection
 
-Create a connection in Azure AI Foundry that points to your APIM.
+Create a connection in Microsoft Foundry that points to your APIM.
 
 ## Deploy
 

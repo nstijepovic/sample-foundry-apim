@@ -1,6 +1,6 @@
-# Connecting Azure AI Foundry to External LLMs via APIM
+# Connecting Microsoft Foundry to External LLMs via APIM
 
-> **Complete Guide**: How to use Azure API Management (APIM) to connect Azure AI Foundry to any OpenAI-compatible external LLM provider.
+> **Complete Guide**: How to use Azure API Management (APIM) to connect Microsoft Foundry to any OpenAI-compatible external LLM provider.
 
 ---
 
@@ -12,7 +12,7 @@ Before proceeding, review these official resources:
 |----------|------|
 | **Bring your own AI gateway** | [Microsoft Learn](https://learn.microsoft.com/en-us/azure/ai-foundry/agents/how-to/tools/bring-your-own-ai-gateway) |
 | **APIM Integration Samples** | [GitHub - foundry-samples](https://github.com/azure-ai-foundry/foundry-samples/blob/main/infrastructure/infrastructure-setup-bicep/01-connections/apim-and-modelgateway-integration-guide.md) |
-| **Azure AI Foundry Connections** | [Microsoft Learn](https://learn.microsoft.com/en-us/azure/ai-foundry/how-to/connections-add) |
+| **Microsoft Foundry Connections** | [Microsoft Learn](https://learn.microsoft.com/en-us/azure/ai-foundry/how-to/connections-add) |
 
 ---
 
@@ -33,7 +33,7 @@ Before proceeding, review these official resources:
 ```
 ┌─────────────────────┐     ┌─────────────────────┐     ┌─────────────────────┐
 │                     │     │                     │     │                     │
-│   Azure AI Foundry  │────▶│   Azure API         │────▶│   External LLM      │
+│  Microsoft Foundry  │────▶│   Azure API         │────▶│   External LLM      │
 │                     │     │   Management        │     │   Provider          │
 │   • Agents          │     │                     │     │                     │
 │   • Workflows       │     │   • Authentication  │     │   • Core42 Compass  │
@@ -67,8 +67,8 @@ Before proceeding, review these official resources:
 |----------|---------|
 | Azure Subscription | Host APIM and Foundry |
 | Azure API Management | Proxy to external LLM |
-| Azure AI Foundry Account | Create agents and workflows |
-| Azure AI Foundry Project | Container for connections and agents |
+| Microsoft Foundry Account | Create agents and workflows |
+| Microsoft Foundry Project | Container for connections and agents |
 | External LLM API Key | Access to external LLM (e.g., Core42 Compass) |
 
 ### Tools
@@ -80,7 +80,7 @@ Before proceeding, review these official resources:
 
 ## Part 1: Configure APIM as a Proxy
 
-Azure AI Foundry expects an OpenAI-compatible API with specific endpoints. We'll configure APIM to expose these endpoints and proxy requests to the external LLM.
+Microsoft Foundry expects an OpenAI-compatible API with specific endpoints. We'll configure APIM to expose these endpoints and proxy requests to the external LLM.
 
 ### Step 1.1: Create the API
 
@@ -215,7 +215,7 @@ $result.choices[0].message.content
 
 ## Part 2: Create Foundry Connection
 
-Now we'll create a connection in Azure AI Foundry that points to our APIM.
+Now we'll create a connection in Microsoft Foundry that points to our APIM.
 
 ### Step 2.1: Deploy Using Bicep
 
