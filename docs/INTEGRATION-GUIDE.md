@@ -18,19 +18,11 @@ Before proceeding, review these official resources:
 
 ## Table of Contents
 
-1. [Architecture Overview](#architecture-overview)
-2. [Prerequisites](#prerequisites)
-3. [Part 1: Configure APIM as a Proxy](#part-1-configure-apim-as-a-proxy)
-4. [Part 2: Create Foundry Connection](#part-2-create-foundry-connection)
-5. [Part 3: Use the Connection in Foundry](#part-3-use-the-connection-in-foundry)
-6. [Troubleshooting](#troubleshooting)
-7. [Reference](#reference)
-
----
-
-## Architecture Overview
-
-Microsoft Foundry connects to your APIM, which proxies requests to the external LLM provider. The APIM subscription key is stored in Foundry, while the external LLM API key is stored securely in APIM policies.
+1. [Prerequisites](#prerequisites)
+2. [Part 1: Configure APIM as a Proxy](#part-1-configure-apim-as-a-proxy)
+3. [Part 2: Create Foundry Connection](#part-2-create-foundry-connection)
+4. [Part 3: Use the Connection in Foundry](#part-3-use-the-connection-in-foundry)
+5. [Reference](#reference)
 
 ---
 
@@ -59,17 +51,20 @@ Microsoft Foundry expects an OpenAI-compatible API with specific endpoints. We'l
 
 ### Step 1.1: Create the API
 
+> **IMPORTANT:** `--subscription-key-header-name "api-key"` is REQUIRED for Foundry compatibility!
+
 ```powershell
 az apim api create `
-  --resource-group <RESOURCE_GROUP> `
-  --service-name <APIM_NAME> `
-  --api-id compass-api `
-  --display-name "Compass API" `
-  --path compass `
-  --service-url "https://api.core42.ai/openai" `
-  --protocols https `
-  --subscription-required true `
-  --subscription-key-header-name "api-key"
+    --resource-group $ResourceGroup `
+    --service-name $ApimName `
+    --api-id $ApiId `
+    --display-name "Compass API" `
+    --path $ApiPath `
+    --service-url $BackendUrl `
+    --protocols https `
+    --subscription-required true `
+    --subscription-key-header-name "api-key" `
+    --subscription-key-query-param-name "api-key"
 ```
 
 **Parameters:**
@@ -81,6 +76,7 @@ az apim api create `
 | `--service-url` | `https://api.core42.ai/openai` | Backend LLM endpoint |
 | `--subscription-required` | `true` | Require API key for access |
 | `--subscription-key-header-name` | `api-key` | **Required for Foundry** - use `api-key` header instead of default |
+| `--subscription-key-query-param-name` | `api-key` | Query param name for API key |
 
 ---
 
@@ -94,13 +90,13 @@ Returns a list of available models. Foundry calls this to discover what models a
 
 ```powershell
 az apim api operation create `
-  --resource-group <RESOURCE_GROUP> `
-  --service-name <APIM_NAME> `
-  --api-id compass-api `
-  --operation-id ListDeployments `
-  --display-name "ListDeployments" `
-  --method GET `
-  --url-template "/deployments"
+    --resource-group $ResourceGroup `
+    --service-name $ApimName `
+    --api-id $ApiId `
+    --operation-id ListDeployments `
+    --display-name "ListDeployments" `
+    --method GET `
+    --url-template "/deployments"
 ```
 
 #### Operation 2: GetDeployment
@@ -109,14 +105,14 @@ Returns details for a specific model. Foundry calls this to validate a model exi
 
 ```powershell
 az apim api operation create `
-  --resource-group <RESOURCE_GROUP> `
-  --service-name <APIM_NAME> `
-  --api-id compass-api `
-  --operation-id GetDeployment `
-  --display-name "GetDeployment" `
-  --method GET `
-  --url-template "/deployments/{deploymentName}" `
-  --template-parameters name=deploymentName type=string required=true
+    --resource-group $ResourceGroup `
+    --service-name $ApimName `
+    --api-id $ApiId `
+    --operation-id GetDeployment `
+    --display-name "GetDeployment" `
+    --method GET `
+    --url-template "/deployments/{deploymentName}" `
+    --template-parameters name=deploymentName type=string required=true
 ```
 
 #### Operation 3: ChatCompletions
@@ -125,35 +121,34 @@ The actual inference endpoint. Foundry sends chat messages here.
 
 ```powershell
 az apim api operation create `
-  --resource-group <RESOURCE_GROUP> `
-  --service-name <APIM_NAME> `
-  --api-id compass-api `
-  --operation-id ChatCompletions `
-  --display-name "ChatCompletions" `
-  --method POST `
-  --url-template "/deployments/{deployment-id}/chat/completions" `
-  --template-parameters name=deployment-id type=string required=true
+    --resource-group $ResourceGroup `
+    --service-name $ApimName `
+    --api-id $ApiId `
+    --operation-id ChatCompletions `
+    --display-name "ChatCompletions" `
+    --method POST `
+    --url-template "/deployments/{deployment-id}/chat/completions" `
+    --template-parameters name=deployment-id type=string required=true
 ```
 
 ---
 
 ### Step 1.3: Apply Policies
 
-APIM policies control how requests are processed. We need policies for each operation.
+Policies are applied via `az rest` with JSON files. See `01-apim-setup/setup-apim.ps1` for the complete policy definitions.
 
-See the policy files in `../01-apim-setup/policies/` for the full XML content.
+```powershell
+$baseUri = "https://management.azure.com/subscriptions/$SubscriptionId/resourceGroups/$ResourceGroup/providers/Microsoft.ApiManagement/service/$ApimName/apis/$ApiId"
 
-#### Policy for ListDeployments
+# Apply ListDeployments policy
+az rest --method PUT --uri "$baseUri/operations/ListDeployments/policies/policy?api-version=2022-08-01" --body "@list-policy.json"
 
-This policy returns a **static JSON response** listing available models. The request never reaches the backend.
+# Apply GetDeployment policy
+az rest --method PUT --uri "$baseUri/operations/GetDeployment/policies/policy?api-version=2022-08-01" --body "@get-policy.json"
 
-#### Policy for GetDeployment
-
-This policy dynamically returns model details based on the URL path parameter.
-
-#### Policy for ChatCompletions
-
-This is the **critical policy** - it adds the external LLM's API key and forwards the request to the backend.
+# Apply ChatCompletions policy
+az rest --method PUT --uri "$baseUri/operations/ChatCompletions/policies/policy?api-version=2022-08-01" --body "@chat-policy.json"
+```
 
 > ⚠️ **Security Note**: Store your external LLM API key securely. Consider using [Named Values](https://learn.microsoft.com/en-us/azure/api-management/api-management-howto-properties) or Key Vault for production.
 
@@ -164,28 +159,19 @@ This is the **critical policy** - it adds the external LLM's API key and forward
 Before connecting Foundry, verify APIM works correctly:
 
 ```powershell
-# Set your APIM subscription key
-$apimKey = "<YOUR_APIM_SUBSCRIPTION_KEY>"
-$apimEndpoint = "https://<APIM_NAME>.azure-api.net/compass"
+$apimKey = "YOUR_APIM_SUBSCRIPTION_KEY"  # Get from Azure Portal > APIM > Subscriptions
 
-# Test 1: ListDeployments
-Write-Host "Testing ListDeployments..."
-Invoke-RestMethod -Uri "$apimEndpoint/deployments" `
-  -Headers @{"api-key"=$apimKey}
+# Test ListDeployments
+Invoke-RestMethod -Uri "https://$ApimName.azure-api.net/$ApiPath/deployments?api-version=2024-10-21" -Headers @{"api-key"=$apimKey}
 
-# Test 2: GetDeployment
-Write-Host "Testing GetDeployment..."
-Invoke-RestMethod -Uri "$apimEndpoint/deployments/gpt-5" `
-  -Headers @{"api-key"=$apimKey}
+# Test GetDeployment
+Invoke-RestMethod -Uri "https://$ApimName.azure-api.net/$ApiPath/deployments/gpt-5?api-version=2024-10-21" -Headers @{"api-key"=$apimKey}
 
-# Test 3: ChatCompletions
-Write-Host "Testing ChatCompletions..."
-$body = '{"model":"gpt-5","messages":[{"role":"user","content":"Say hello"}]}'
-$result = Invoke-RestMethod -Uri "$apimEndpoint/deployments/gpt-5/chat/completions" `
-  -Method POST `
-  -Headers @{"api-key"=$apimKey; "Content-Type"="application/json"} `
-  -Body $body
-$result.choices[0].message.content
+# Test ChatCompletions
+$resp = Invoke-RestMethod -Uri "https://$ApimName.azure-api.net/$ApiPath/deployments/gpt-5/chat/completions?api-version=2024-10-21" `
+    -Headers @{"api-key"=$apimKey; "Content-Type"="application/json"} `
+    -Method POST -Body '{"messages":[{"role":"user","content":"Hello"}]}'
+$resp.choices[0].message.content
 ```
 
 ---
@@ -235,20 +221,6 @@ See `../03-agent-samples/create_agent.py` for a complete example.
 3. In **Model** dropdown, select `compass-connection/gpt-5`
 4. Configure instructions and tools
 5. **Save** and test in the playground
-
----
-
-## Troubleshooting
-
-### Common Issues
-
-| Issue | Cause | Solution |
-|-------|-------|----------|
-| `401 Unauthorized` on APIM | Wrong APIM subscription key | Verify key in parameters file |
-| `404 Not Found` on ListDeployments | Operation not created | Create the operation in APIM |
-| Model not appearing in Foundry | Connection not deployed | Verify Bicep deployment succeeded |
-| `Invalid model` error | Wrong model format | Use `connection-name/deployment-name` |
-| Backend timeout | External LLM unreachable | Check APIM → Backend → health |
 
 ---
 
