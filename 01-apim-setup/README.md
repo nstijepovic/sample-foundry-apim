@@ -2,23 +2,9 @@
 
 Configure Azure API Management as a proxy to your external LLM provider.
 
-## Quick Setup
+## Setup
 
-Run the setup script:
-
-```powershell
-./setup-apim.ps1 `
-  -SubscriptionId "<SUBSCRIPTION_ID>" `
-  -ResourceGroup "<RESOURCE_GROUP>" `
-  -ApimName "<APIM_NAME>" `
-  -BackendUrl "https://api.core42.ai/openai" `
-  -ExternalApiKey "<EXTERNAL_LLM_API_KEY>" `
-  -Models @("gpt-4.1", "gpt-5")
-```
-
-## Manual Setup
-
-If you prefer to set up manually, follow these steps:
+Follow these steps:
 
 ### 1. Create the API
 
