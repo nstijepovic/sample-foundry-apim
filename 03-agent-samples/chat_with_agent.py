@@ -1,14 +1,11 @@
 """
 Chat with Agent
-
 Interactive chat session with an agent in Azure AI Foundry.
 """
-
 import os
 from dotenv import load_dotenv
 from azure.identity import DefaultAzureCredential
 from azure.ai.projects import AIProjectClient
-from azure.ai.projects.models import AgentReference
 
 load_dotenv()
 
@@ -51,7 +48,10 @@ def main():
             response = openai.responses.create(
                 conversation=conversation.id,
                 extra_body={
-                    "agent": AgentReference(name=AGENT_NAME).as_dict()
+                    "agent_reference": {
+                        "type": "agent_reference",
+                        "name": AGENT_NAME
+                    }
                 },
                 input=user_input,
             )
@@ -61,7 +61,6 @@ def main():
 
     except KeyboardInterrupt:
         print("\n\nInterrupted!")
-
     finally:
         # Clean up
         try:
