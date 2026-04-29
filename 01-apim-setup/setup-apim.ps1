@@ -116,12 +116,13 @@ az rest --method PUT --uri "$baseUri/operations/ListDeployments/policies/policy?
 $getPolicy = @{
     properties = @{
         format = "rawxml"
-        value = '<policies><inbound><base /><return-response><set-status code="200" reason="OK" /><set-header name="Content-Type" exists-action="override"><value>application/json</value></set-header><set-body>{"name": "gpt-5", "properties": {"model": {"format": "OpenAI", "name": "gpt-5", "version": ""}}}</set-body></return-response></inbound><backend><base /></backend><outbound><base /></outbound></policies>'
+        value  = '<policies><inbound><base /><return-response><set-status code="200" reason="OK" /><set-header name="Content-Type" exists-action="override"><value>application/json</value></set-header><set-body>@{ var id = context.Request.MatchedParameters.GetValueOrDefault("deploymentName", ""); return "{\"name\":\"" + id + "\",\"properties\":{\"model\":{\"format\":\"OpenAI\",\"name\":\"" + id + "\",\"version\":\"\"}}}"; }</set-body></return-response></inbound><backend><base /></backend><outbound><base /></outbound></policies>'
     }
 } | ConvertTo-Json -Depth 5
 $getPolicy | Out-File -FilePath "get-policy.json" -Encoding UTF8
 
 az rest --method PUT --uri "$baseUri/operations/GetDeployment/policies/policy?api-version=2022-08-01" --body "@get-policy.json"
+
 
 # --- 4c. ChatCompletions Policy ---
 $chatPolicy = @{
