@@ -21,7 +21,7 @@ CONNECTION_NAME = os.environ.get("AZURE_AI_CONNECTION_NAME", "compass-connection
 MODEL_NAME = os.environ.get("AZURE_AI_MODEL_NAME", "gpt-5")
 
 # Agent configuration
-AGENT_NAME = "my-compass-agent"
+AGENT_NAME = os.environ.get("AZURE_AI_AGENT_NAME", "my-compass-agent")
 AGENT_INSTRUCTIONS = """You are a helpful assistant powered by an external LLM through Azure API Management.
 
 Be concise and helpful in your responses."""

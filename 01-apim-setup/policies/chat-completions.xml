@@ -3,17 +3,33 @@
   
   Forwards chat completion requests to the backend LLM.
   Adds the external LLM API key to the request.
-  
-  IMPORTANT: Replace YOUR_EXTERNAL_LLM_API_KEY with your actual API key.
-  
-  For production, consider using:
+
+  setup-apim.ps1 substitutes the placeholders below - do not edit them here.
+
+  ⚠️  SAMPLE ONLY - the literal key below keeps this sample self-contained.
+  A literal key is stored in clear text in the policy, so it is exposed to
+  anyone who can read the policy (or the repo), and it must be edited and
+  redeployed to rotate.
+
+  The proper way to store this key is an APIM named value backed by Key Vault,
+  then reference it from the policy instead of the literal:
+
+      <set-header name="api-key" exists-action="override">
+          <value>{{external-llm-api-key}}</value>
+      </set-header>
+
+  Create the named value with type "Key vault", pointing at a secret identifier
+  without a version, and give the APIM managed identity "Key Vault Secrets User"
+  on the vault. APIM then refreshes the rotated secret automatically.
+
   - Named Values: https://learn.microsoft.com/en-us/azure/api-management/api-management-howto-properties
   - Key Vault: https://learn.microsoft.com/en-us/azure/api-management/api-management-howto-use-azure-key-vault
 -->
 <policies>
     <inbound>
         <base />
-        <!-- Add the external LLM API key -->
+        <set-backend-service base-url="YOUR_BACKEND_URL" />
+        <!-- Replaces the caller's APIM subscription key with the backend key -->
         <set-header name="api-key" exists-action="override">
             <value>YOUR_EXTERNAL_LLM_API_KEY</value>
         </set-header>

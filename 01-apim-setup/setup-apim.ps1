@@ -13,8 +13,8 @@
 .NOTES
     Key configuration points:
     - Uses 'api-key' as the subscription header (REQUIRED for Foundry compatibility)
-    - GetDeployment uses static response (C# expressions cause validation issues via az rest)
-    - Policies are applied via az rest with JSON files
+    - GetDeployment resolves each advertised model by name and returns 404 for anything else
+    - Policies live in policies/*.xml and are applied via az rest with JSON files
 
 .EXAMPLE
     # Step 1: Update the CONFIGURATION section below with your values
@@ -31,8 +31,14 @@ $ApimName = "YOUR_APIM_NAME"
 $ApiId = "compass-api"
 $ApiPath = "compass"
 $BackendUrl = "https://api.core42.ai/openai"
+# SAMPLE ONLY: a literal key ends up in clear text in the policy and in chat-policy.json.
+# Production should store it as an APIM named value backed by Key Vault and reference
+# it from the policy as {{external-llm-api-key}}.
 $ExternalApiKey = "YOUR_EXTERNAL_LLM_API_KEY"
-$Models = @("gpt-4.1", "gpt-5")
+
+# The XML files in policies/ are the source of truth - STEP 4 reads them.
+$ScriptDir = if ($PSScriptRoot) { $PSScriptRoot } else { $PWD.Path }
+$PolicyDir = Join-Path $ScriptDir "policies"
 
 # =============================================================================
 # STEP 1: Set subscription
@@ -95,44 +101,41 @@ az apim api operation create `
 
 # =============================================================================
 # STEP 4: Apply Policies
-# Each policy is applied via az rest with a JSON file
+# Each policy is read from policies/*.xml and applied via az rest with a JSON file.
+# Edit the XML files to change a policy - do not edit the JSON.
 # =============================================================================
 
 $baseUri = "https://management.azure.com/subscriptions/$SubscriptionId/resourceGroups/$ResourceGroup/providers/Microsoft.ApiManagement/service/$ApimName/apis/$ApiId"
 
 # --- 4a. ListDeployments Policy ---
-# Update model names in the JSON to match your models
-$listPolicy = @{
-    properties = @{
-        format = "rawxml"
-        value = '<policies><inbound><base /><return-response><set-status code="200" reason="OK" /><set-header name="Content-Type" exists-action="override"><value>application/json</value></set-header><set-body>{"value":[{"name":"gpt-4.1","properties":{"model":{"format":"OpenAI","name":"gpt-4.1","version":""}}},{"name":"gpt-5","properties":{"model":{"format":"OpenAI","name":"gpt-5","version":""}}}]}</set-body></return-response></inbound><backend><base /></backend><outbound><base /></outbound></policies>'
-    }
-} | ConvertTo-Json -Depth 5
-$listPolicy | Out-File -FilePath "list-policy.json" -Encoding UTF8
+# Update model names in policies/list-deployments.xml to match your models
+$listXml = Get-Content (Join-Path $PolicyDir "list-deployments.xml") -Raw
+@{ properties = @{ format = "rawxml"; value = $listXml } } |
+    ConvertTo-Json -Depth 5 | Out-File -FilePath "list-policy.json" -Encoding UTF8
 
 az rest --method PUT --uri "$baseUri/operations/ListDeployments/policies/policy?api-version=2022-08-01" --body "@list-policy.json"
 
-# --- 4b. GetDeployment Policy (static response) ---
-$getPolicy = @{
-    properties = @{
-        format = "rawxml"
-        value = '<policies><inbound><base /><return-response><set-status code="200" reason="OK" /><set-header name="Content-Type" exists-action="override"><value>application/json</value></set-header><set-body>{"name": "gpt-5", "properties": {"model": {"format": "OpenAI", "name": "gpt-5", "version": ""}}}</set-body></return-response></inbound><backend><base /></backend><outbound><base /></outbound></policies>'
-    }
-} | ConvertTo-Json -Depth 5
-$getPolicy | Out-File -FilePath "get-policy.json" -Encoding UTF8
+# --- 4b. GetDeployment Policy ---
+# Every model listed by ListDeployments needs a branch in policies/get-deployment.xml
+$getXml = Get-Content (Join-Path $PolicyDir "get-deployment.xml") -Raw
+@{ properties = @{ format = "rawxml"; value = $getXml } } |
+    ConvertTo-Json -Depth 5 | Out-File -FilePath "get-policy.json" -Encoding UTF8
 
 az rest --method PUT --uri "$baseUri/operations/GetDeployment/policies/policy?api-version=2022-08-01" --body "@get-policy.json"
 
 # --- 4c. ChatCompletions Policy ---
-$chatPolicy = @{
-    properties = @{
-        format = "rawxml"
-        value = "<policies><inbound><base /><set-backend-service base-url=`"$BackendUrl`" /><set-header name=`"api-key`" exists-action=`"override`"><value>$ExternalApiKey</value></set-header></inbound><backend><base /></backend><outbound><base /></outbound></policies>"
-    }
-} | ConvertTo-Json -Depth 5
-$chatPolicy | Out-File -FilePath "chat-policy.json" -Encoding UTF8
+# The key stays a placeholder in the XML so the real one is never committed.
+$chatXml = (Get-Content (Join-Path $PolicyDir "chat-completions.xml") -Raw).
+    Replace("YOUR_BACKEND_URL", $BackendUrl).
+    Replace("YOUR_EXTERNAL_LLM_API_KEY", $ExternalApiKey)
+@{ properties = @{ format = "rawxml"; value = $chatXml } } |
+    ConvertTo-Json -Depth 5 | Out-File -FilePath "chat-policy.json" -Encoding UTF8
 
 az rest --method PUT --uri "$baseUri/operations/ChatCompletions/policies/policy?api-version=2022-08-01" --body "@chat-policy.json"
+
+# --- 4d. Remove the generated policy bodies ---
+# chat-policy.json holds $ExternalApiKey in clear text, so do not leave it on disk.
+Remove-Item list-policy.json, get-policy.json, chat-policy.json -ErrorAction SilentlyContinue
 
 # =============================================================================
 # STEP 5: Test the endpoints
@@ -145,6 +148,9 @@ Invoke-RestMethod -Uri "https://$ApimName.azure-api.net/$ApiPath/deployments?api
 
 # Test GetDeployment
 Invoke-RestMethod -Uri "https://$ApimName.azure-api.net/$ApiPath/deployments/gpt-5?api-version=2024-10-21" -Headers @{"api-key"=$apimKey}
+
+# Test GetDeployment for an unknown model - should return 404, not 200
+Invoke-RestMethod -Uri "https://$ApimName.azure-api.net/$ApiPath/deployments/does-not-exist?api-version=2024-10-21" -Headers @{"api-key"=$apimKey}
 
 # Test ChatCompletions
 $resp = Invoke-RestMethod -Uri "https://$ApimName.azure-api.net/$ApiPath/deployments/gpt-5/chat/completions?api-version=2024-10-21" `

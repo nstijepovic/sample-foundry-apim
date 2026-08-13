@@ -7,6 +7,10 @@ Sample Python scripts for using Microsoft Foundry Agents with APIM-proxied LLM e
 - Python 3.12+
 - [uv](https://docs.astral.sh/uv/) package manager
 - Azure CLI logged in (`az login`)
+- A deployed Foundry connection (see [02-foundry-connection](../02-foundry-connection/README.md))
+
+> 📝 While this feature is in public preview, gateway-backed models are supported by
+> **Prompt Agents only**, and can be used from the CLI and SDK rather than the portal.
 
 ## Setup
 

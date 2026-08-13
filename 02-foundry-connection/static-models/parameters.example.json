@@ -23,8 +23,32 @@
     "inferenceAPIVersion": {
       "value": "2024-10-21"
     },
-    "staticModels": {
-      "value": []
+    "models": {
+      "metadata": {
+        "description": "Deployment name in 'name', provider model details in properties.model."
+      },
+      "value": [
+        {
+          "name": "gpt-4.1",
+          "properties": {
+            "model": {
+              "name": "gpt-4.1",
+              "version": "",
+              "format": "OpenAI"
+            }
+          }
+        },
+        {
+          "name": "gpt-5",
+          "properties": {
+            "model": {
+              "name": "gpt-5",
+              "version": "",
+              "format": "OpenAI"
+            }
+          }
+        }
+      ]
     }
   }
 }

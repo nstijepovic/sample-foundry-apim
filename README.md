@@ -11,7 +11,9 @@ Before starting, **read these resources** to understand the approaches and archi
 | Resource | Description |
 |----------|-------------|
 | [🔗 AI Gateway in Microsoft Foundry](https://learn.microsoft.com/en-us/azure/ai-foundry/agents/how-to/ai-gateway?view=foundry) | **Start here** - Official guide explaining AI Gateway options |
-| [🔗 APIM and Model Gateway Integration Guide](https://github.com/azure-ai-foundry/foundry-samples/blob/main/infrastructure/infrastructure-setup-bicep/01-connections/apim-and-modelgateway-integration-guide.md) | Detailed Bicep templates and step-by-step instructions |
+| [🔗 APIM Setup Guide for Foundry Agents](https://github.com/microsoft-foundry/foundry-samples/blob/main/infrastructure/infrastructure-setup-bicep/01-connections/apim/apim-setup-guide-for-agents.md) | Step-by-step APIM configuration, including both model discovery options |
+| [🔗 APIM Connection Objects](https://github.com/microsoft-foundry/foundry-samples/blob/main/infrastructure/infrastructure-setup-bicep/01-connections/apim/APIM-Connection-Objects.md) | Reference for every connection metadata field |
+| [🔗 Official APIM connection Bicep](https://github.com/microsoft-foundry/foundry-samples/tree/main/infrastructure/infrastructure-setup-bicep/01-connections/apim) | The upstream template this sample is based on |
 | [Bring your own AI gateway to Azure AI Agent Service](https://learn.microsoft.com/en-us/azure/ai-foundry/agents/how-to/tools/bring-your-own-ai-gateway) | Additional documentation for APIM integration |
 
 ## Limitations (Public Preview)
@@ -23,7 +25,7 @@ Before starting, **read these resources** to understand the approaches and archi
 - **Networking**:
   - Public networking is supported for APIM or self-hosted gateways
   - For full network isolation, use Foundry with Standard Secured Agents with virtual network injection
-  - For APIM with full network isolation, deploy Foundry and APIM following [this GitHub template](https://github.com/azure-ai-foundry/foundry-samples/tree/main/infrastructure/infrastructure-setup-bicep)
+  - For APIM with full network isolation, deploy Foundry and APIM following [this GitHub template](https://github.com/microsoft-foundry/foundry-samples/tree/main/infrastructure/infrastructure-setup-bicep)
   - For self-hosted gateways with full network isolation, ensure endpoints are accessible inside the virtual network injection used by the Agent service
 - **Supported Agent tools**: CodeInterpreter, Functions, File Search, OpenAPI, Foundry IQ, Sharepoint Grounding, Fabric Data Agent, MCP, and Browser Automation
 - **Different from built-in AI Gateway** - This feature is different from the "AI Gateway in Foundry" feature where a new, unique APIM instance is deployed with your Foundry resource. For that feature, see [Enforce token limits with AI Gateway](https://learn.microsoft.com/en-us/azure/ai-foundry/how-to/ai-gateway-overview)
@@ -59,8 +61,12 @@ cd 01-apim-setup
 
 ### Step 2: Deploy Foundry Connection
 
+Pick one mode - dynamic discovery or a static model list. For a non-Azure backend
+like Compass, Microsoft recommends the static list; see
+[02-foundry-connection/README.md](02-foundry-connection/README.md) for the tradeoff.
+
 ```powershell
-cd ../02-foundry-connection
+cd ../02-foundry-connection/static-models   # or ../02-foundry-connection/dynamic-discovery
 az deployment group create --resource-group "my-rg" --template-file connection.bicep --parameters @parameters.json
 ```
 
@@ -88,9 +94,15 @@ azure-ai-foundry-apim-integration/
 │       ├── get-deployment.xml         # Policy for GetDeployment
 │       └── chat-completions.xml       # Policy for ChatCompletions
 ├── 02-foundry-connection/
-│   ├── README.md                      # Connection setup instructions
-│   ├── connection.bicep               # Bicep template
-│   └── parameters.example.json        # Example parameters
+│   ├── README.md                      # Choose a model discovery mode
+│   ├── dynamic-discovery/             # Foundry calls APIM to discover models
+│   │   ├── README.md
+│   │   ├── connection.bicep
+│   │   └── parameters.example.json
+│   └── static-models/                 # Model list stored in connection metadata
+│       ├── README.md
+│       ├── connection.bicep
+│       └── parameters.example.json
 ├── 03-agent-samples/
     ├── README.md                      # Sample usage instructions
     ├── pyproject.toml                 # Python dependencies (uv)
@@ -106,6 +118,6 @@ See [docs/INTEGRATION-GUIDE.md](docs/INTEGRATION-GUIDE.md) for detailed step-by-
 ## Additional Resources
 
 - [Bring your own AI gateway (Microsoft Learn)](https://learn.microsoft.com/en-us/azure/ai-foundry/agents/how-to/tools/bring-your-own-ai-gateway)
-- [Foundry Samples - APIM Integration](https://github.com/azure-ai-foundry/foundry-samples/tree/main/infrastructure/infrastructure-setup-bicep/01-connections)
+- [Foundry Samples - APIM connections](https://github.com/microsoft-foundry/foundry-samples/tree/main/infrastructure/infrastructure-setup-bicep/01-connections/apim)
 - [Azure API Management documentation](https://learn.microsoft.com/en-us/azure/api-management/)
 

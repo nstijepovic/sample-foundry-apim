@@ -11,7 +11,9 @@ Before proceeding, review these official resources:
 | Resource | Link |
 |----------|------|
 | **Bring your own AI gateway** | [Microsoft Learn](https://learn.microsoft.com/en-us/azure/ai-foundry/agents/how-to/tools/bring-your-own-ai-gateway) |
-| **APIM Integration Samples** | [GitHub - foundry-samples](https://github.com/azure-ai-foundry/foundry-samples/blob/main/infrastructure/infrastructure-setup-bicep/01-connections/apim-and-modelgateway-integration-guide.md) |
+| **APIM Setup Guide for Foundry Agents** | [GitHub - foundry-samples](https://github.com/microsoft-foundry/foundry-samples/blob/main/infrastructure/infrastructure-setup-bicep/01-connections/apim/apim-setup-guide-for-agents.md) |
+| **APIM Connection Objects (metadata reference)** | [GitHub - foundry-samples](https://github.com/microsoft-foundry/foundry-samples/blob/main/infrastructure/infrastructure-setup-bicep/01-connections/apim/APIM-Connection-Objects.md) |
+| **Troubleshooting Guide** | [GitHub - foundry-samples](https://github.com/microsoft-foundry/foundry-samples/blob/main/infrastructure/infrastructure-setup-bicep/01-connections/apim/troubleshooting-guide.md) |
 | **Microsoft Foundry Connections** | [Microsoft Learn](https://learn.microsoft.com/en-us/azure/ai-foundry/how-to/connections-add) |
 
 ---
@@ -133,7 +135,8 @@ az apim api operation create `
 
 ### Step 1.3: Apply Policies
 
-Policies are applied via `az rest` with JSON files. See `01-apim-setup/setup-apim.ps1` for the complete policy definitions.
+Policies are defined in `01-apim-setup/policies/*.xml` and applied via `az rest` with a
+JSON wrapper. See `01-apim-setup/setup-apim.ps1` for the full sequence.
 
 ```powershell
 $baseUri = "https://management.azure.com/subscriptions/$SubscriptionId/resourceGroups/$ResourceGroup/providers/Microsoft.ApiManagement/service/$ApimName/apis/$ApiId"
@@ -178,7 +181,23 @@ $resp.choices[0].message.content
 
 Now we'll create a connection in Microsoft Foundry that points to our APIM.
 
+### Step 2.0: Choose a Model Discovery Mode
+
+A connection uses either a static model list or dynamic discovery - never both.
+
+| Mode | Folder | Models come from | APIM operations needed |
+|------|--------|------------------|------------------------|
+| Static | `02-foundry-connection/static-models` | `models` in the connection metadata | ChatCompletions |
+| Dynamic | `02-foundry-connection/dynamic-discovery` | Foundry calling the discovery endpoints | ChatCompletions + ListDeployments + GetDeployment |
+
+Microsoft's guide documents dynamic discovery for APIM instances backed by Azure OpenAI
+or Foundry, where the discovery operations proxy to Azure Resource Manager. For any other
+backend - Compass included - it recommends static discovery for simplicity. This sample
+supports both: the dynamic path mocks the two discovery endpoints in APIM policy.
+
 ### Step 2.1: Deploy Using Bicep
+
+Deploy from the folder for the mode you picked:
 
 ```powershell
 az deployment group create `
@@ -186,6 +205,10 @@ az deployment group create `
   --template-file connection.bicep `
   --parameters @parameters.json
 ```
+
+> 💡 The upstream repo ships a
+> [validation script](https://github.com/microsoft-foundry/foundry-samples/blob/main/infrastructure/infrastructure-setup-bicep/01-connections/apim/test_apim_connection.py)
+> that exercises a parameter file against a live APIM before you create the connection.
 
 ### Step 2.2: Verify Connection
 
@@ -231,8 +254,35 @@ See `../03-agent-samples/create_agent.py` for a complete example.
 | `category` | `ApiManagement` | Tells Foundry this is an APIM proxy |
 | `authType` | `ApiKey` | Authentication method |
 | `target` | APIM URL | Base URL for API calls |
-| `deploymentInPath` | `true` | Model name goes in URL path |
-| `inferenceAPIVersion` | `2024-10-21` | OpenAI API version |
+| `isSharedToAll` | `true` | Shares the connection with all project users. Upstream defaults to `false` |
+
+### Connection Metadata
+
+Complex values (objects, arrays) are stored as serialized JSON strings.
+
+| Key | Mode | Description |
+|-----|------|-------------|
+| `deploymentInPath` | both | `"true"` when the URL is `/deployments/{name}/chat/completions`, `"false"` when the model is passed in the body |
+| `inferenceAPIVersion` | both | `api-version` for inference calls. Omit to use Foundry's default |
+| `deploymentAPIVersion` | dynamic | `api-version` for discovery calls only. Omit to send no query param |
+| `modelDiscovery` | dynamic | `listModelsEndpoint`, `getModelEndpoint`, `deploymentProvider`. Optional when using the APIM defaults `/deployments`, `/deployments/{deploymentName}`, `AzureOpenAI` |
+| `models` | static | Model list as `name` + `properties.model.{name,version,format}` |
+| `authConfig` | optional | Changes the header name and value format used to send the APIM key, e.g. `x-api-key` or `Bearer {api_key}`. An alternative to setting `--subscription-key-header-name` on the API |
+| `customHeaders` | optional | Extra headers attached to every inference call |
+
+### Model `format` Values
+
+`format` names the provider contract the model speaks. The official reference gives it
+as an open list - *"Provider format (OpenAI, DeepSeek, etc.)"* - rather than a fixed
+set, so match it to your provider. Compass is OpenAI-compatible, so this sample uses
+`OpenAI`. A wrong value fails at tool-use time, not at connection time.
+
+### Discovery Response Formats
+
+| `deploymentProvider` | List response | Get response |
+|----------------------|---------------|--------------|
+| `AzureOpenAI` | `{"value": [ { "name", "properties": { "model": {...} } } ]}` | single object of the same shape |
+| `OpenAI` | `{"data": [ { "id", "object", ... } ]}` | single object keyed by `id` |
 
 ### Required APIM Operations
 
@@ -241,3 +291,6 @@ See `../03-agent-samples/create_agent.py` for a complete example.
 | ListDeployments | GET | `/deployments` | Discover available models |
 | GetDeployment | GET | `/deployments/{name}` | Validate model exists |
 | ChatCompletions | POST | `/deployments/{id}/chat/completions` | Inference calls |
+
+ListDeployments and GetDeployment are only needed for dynamic discovery. With a
+static model list, ChatCompletions is the only required operation.

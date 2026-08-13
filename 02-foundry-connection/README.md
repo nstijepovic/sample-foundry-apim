@@ -2,39 +2,27 @@
 
 Create a connection in Microsoft Foundry that points to your APIM.
 
-## Deploy
+Pick one model discovery mode - a connection uses either dynamic discovery or a
+static model list, never both.
 
-1. Copy `parameters.example.json` to `parameters.json`
-2. Update the values in `parameters.json`
-3. Deploy:
+| Folder | Mode | How models are found | Required APIM operations |
+|--------|------|----------------------|--------------------------|
+| [dynamic-discovery/](dynamic-discovery/) | Dynamic | Foundry calls `ListDeployments` / `GetDeployment` on APIM at runtime | ChatCompletions + both discovery operations |
+| [static-models/](static-models/) | Static | Model list is stored in the connection metadata | ChatCompletions only |
 
-```powershell
-az deployment group create `
-  --resource-group <RESOURCE_GROUP> `
-  --template-file connection.bicep `
-  --parameters @parameters.json
-```
+**Which to use:** a static list is simpler, costs no extra APIM calls, and is what
+Microsoft recommends for this sample's scenario. The setup guide is explicit that
+its dynamic discovery instructions assume an Azure OpenAI or Foundry resource behind
+APIM: *"For any other backend services, ensure you properly setup and test it out,
+otherwise use static discovery for simplicity."* Compass is exactly such a backend.
 
-## Parameters
+Dynamic discovery is still worth using when the model list changes often and you want
+APIM to stay the single source of truth - just be aware the discovery endpoints have to
+be implemented by hand (this sample mocks them in policy).
 
-| Parameter | Description | Example |
-|-----------|-------------|---------|
-| `accountName` | Foundry account name | `my-foundry-account` |
-| `projectName` | Foundry project name | `my-project` |
-| `connectionName` | Name for the connection | `compass-connection` |
-| `targetUrl` | APIM endpoint URL | `https://my-apim.azure-api.net/compass` |
-| `apiKey` | APIM subscription key | `abc123...` |
-
-## Model Discovery: Static vs Dynamic
-
-Foundry needs to know what models are available through your APIM connection.
-
-| Approach | `staticModels` param | How it works |
-|----------|---------------------|---------------|
-| **Dynamic** (default) | `[]` (empty) | Foundry calls APIM's `ListDeployments` endpoint to discover models |
-| **Static** | `["gpt-4", "gpt-5"]` | Models are stored in connection metadata, no API call needed |
-
-**Recommendation:** Use dynamic discovery (empty `staticModels`) so your APIM is the single source of truth for available models.
+Either way, `deploymentInPath` must match how the gateway routes chat completions,
+and the connection is referenced from an agent as `<connection-name>/<deployment-name>`
+(for example `compass-connection/gpt-5`).
 
 ## Connection Properties
 
@@ -42,15 +30,23 @@ Foundry needs to know what models are available through your APIM connection.
 |----------|-------|-------------|
 | `category` | `ApiManagement` | Tells Foundry this is an APIM proxy |
 | `authType` | `ApiKey` | Uses API key authentication |
-| `deploymentInPath` | `true` | Model name goes in URL path |
-| `inferenceAPIVersion` | `2024-10-21` | OpenAI API version |
+| `target` | APIM URL | Base URL for all calls |
+| `isSharedToAll` | `true` | Shares the connection with every project user. The official template defaults to `false` - set it there if the APIM key should not be visible to all members |
 
-## Using the Connection
+## Metadata Reference
 
-After deployment, reference models as:
+Metadata drives how Foundry calls the gateway. Complex values (objects and arrays)
+must be stored as serialized JSON strings, which both templates handle.
 
-```
-<connection-name>/<deployment-name>
-```
+| Key | Used by | Description |
+|-----|---------|-------------|
+| `deploymentInPath` | both | `"true"` for `/deployments/{name}/chat/completions`, `"false"` when the model goes in the body as `model` |
+| `inferenceAPIVersion` | both | `api-version` for chat completions. Omitted entirely when empty, which makes Foundry use its own default |
+| `deploymentAPIVersion` | dynamic | `api-version` appended to discovery calls only. Omitted when empty, so no query param is added |
+| `modelDiscovery` | dynamic | `listModelsEndpoint`, `getModelEndpoint`, `deploymentProvider` |
+| `models` | static | The model list, in `ModelInfo` shape |
+| `authConfig` | neither (not exposed) | Overrides the header name and value format used to send the APIM key, e.g. `x-api-key` or `Bearer {api_key}` |
+| `customHeaders` | neither (not exposed) | Extra headers added to every inference call |
 
-Example: `compass-connection/gpt-5`
+See [APIM Connection Objects](https://github.com/microsoft-foundry/foundry-samples/blob/main/infrastructure/infrastructure-setup-bicep/01-connections/apim/APIM-Connection-Objects.md)
+for the full field reference, and the README in each folder for parameters and the deploy command.
